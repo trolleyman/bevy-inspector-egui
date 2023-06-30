@@ -366,13 +366,6 @@ impl InspectorUi<'_, '_> {
             }
             TypeInfo::Enum(info) => self.ui_for_enum_many(info, ui, id, options, values, projector),
             TypeInfo::Value(info) => self.ui_for_value_many(info, ui, id, options),
-            TypeInfo::Dynamic(_) => {
-                errors::no_multiedit(
-                    ui,
-                    &pretty_type_name::pretty_type_name_str(info.type_name()),
-                );
-                false
-            }
         }
     }
 }
@@ -654,7 +647,7 @@ impl InspectorUi<'_, '_> {
                 }
             }
 
-            let TypeInfo::List(info) = list.get_type_info() else { return };
+            let Some(TypeInfo::List(info)) = list.get_represented_type_info() else { return };
             let error_id = id.with("error");
 
             ui.vertical_centered_justified(|ui| {
@@ -894,9 +887,9 @@ impl InspectorUi<'_, '_> {
         id: egui::Id,
         options: &dyn Any,
     ) -> bool {
-        let type_info = value.get_type_info();
+        let type_info = value.get_represented_type_info();
         let type_info = match type_info {
-            TypeInfo::Enum(info) => info,
+            Some(TypeInfo::Enum(info)) => info,
             _ => unreachable!("invalid reflect impl: type info mismatch"),
         };
 
@@ -1107,7 +1100,7 @@ impl InspectorUi<'_, '_> {
 
                             if variant_label_response.clicked() {
                                 if let Ok(dynamic_enum) =
-                                    self.construct_default_variant(variant, ui, info.type_name())
+                                    self.construct_default_variant(variant, ui)
                                 {
                                     changed_variant = Some((i, dynamic_enum));
                                 };
@@ -1223,7 +1216,6 @@ impl<'a, 'c> InspectorUi<'a, 'c> {
         &mut self,
         variant: &VariantInfo,
         ui: &mut egui::Ui,
-        enum_type_name: &'static str,
     ) -> Result<DynamicEnum, ()> {
         let dynamic_variant = match variant {
             VariantInfo::Struct(struct_info) => {
@@ -1256,7 +1248,7 @@ impl<'a, 'c> InspectorUi<'a, 'c> {
             }
             VariantInfo::Unit(_) => DynamicVariant::Unit,
         };
-        let dynamic_enum = DynamicEnum::new(enum_type_name, variant.name(), dynamic_variant);
+        let dynamic_enum = DynamicEnum::new(variant.name(), dynamic_variant);
         Ok(dynamic_enum)
     }
 }

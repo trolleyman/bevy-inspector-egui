@@ -38,7 +38,6 @@
 
 use std::any::TypeId;
 
-use bevy_app::prelude::AppTypeRegistry;
 use bevy_asset::{Asset, Assets, ReflectAsset};
 use bevy_ecs::query::ReadOnlyWorldQuery;
 use bevy_ecs::system::CommandQueue;
@@ -205,7 +204,7 @@ pub fn ui_for_state<T: States + Reflect>(world: &mut World, ui: &mut egui::Ui) {
     };
     let mut env = InspectorUi::for_bevy(&type_registry, &mut cx);
 
-    let mut current = state.0.clone();
+    let mut current = state.get().clone();
     let changed = env.ui_for_reflect(&mut current, ui);
 
     if changed {
@@ -810,7 +809,7 @@ pub mod short_circuit {
                     assert!(assets_view
                         .allows_access_to_resource(reflect_asset.assets_resource_type_id()));
                     let asset_value =
-                        // SAFETY: the world allows mutable access to `Assets<T>` 
+                        // SAFETY: the world allows mutable access to `Assets<T>`
                         unsafe { reflect_asset.get_unchecked_mut(world.world(), handle) };
                     match asset_value {
                         Some(value) => value,

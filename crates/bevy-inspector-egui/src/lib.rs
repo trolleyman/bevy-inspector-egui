@@ -101,7 +101,7 @@
 //!         egui::ScrollArea::vertical().show(ui, |ui| {
 //!             // equivalent to `WorldInspectorPlugin`
 //!             bevy_inspector::ui_for_world(world, ui);
-//!             
+//!
 //!             // works with any `Reflect` value, including `Handle`s
 //!             let mut any_reflect_value: i32 = 5;
 //!             bevy_inspector::ui_for_value(&mut any_reflect_value, ui, world);
@@ -151,7 +151,7 @@ impl bevy_app::Plugin for DefaultInspectorConfigPlugin {
             return;
         }
 
-        let type_registry = app.world.resource::<bevy_app::AppTypeRegistry>();
+        let type_registry = app.world.resource::<bevy_ecs::reflect::AppTypeRegistry>();
         let mut type_registry = type_registry.write();
 
         inspector_options::default_options::register_default_options(&mut type_registry);

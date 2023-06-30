@@ -8,10 +8,11 @@
 
 use std::{marker::PhantomData, sync::Mutex};
 
-use bevy_app::Plugin;
+use bevy_app::{Plugin, Update};
 use bevy_asset::Asset;
+use bevy_ecs::component::Tick;
 use bevy_ecs::prelude::*;
-use bevy_ecs::{query::ReadOnlyWorldQuery, schedule::BoxedCondition, system::ReadOnlySystem};
+use bevy_ecs::{world::unsafe_world_cell::UnsafeWorldCell, query::ReadOnlyWorldQuery, schedule::BoxedCondition, system::ReadOnlySystem};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_reflect::Reflect;
 use bevy_window::PrimaryWindow;
@@ -59,18 +60,18 @@ impl WorldInspectorPlugin {
 impl Plugin for WorldInspectorPlugin {
     fn build(&self, app: &mut bevy_app::App) {
         if !app.is_plugin_added::<DefaultInspectorConfigPlugin>() {
-            app.add_plugin(DefaultInspectorConfigPlugin);
+            app.add_plugins(DefaultInspectorConfigPlugin);
         }
         if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugin(EguiPlugin);
+            app.add_plugins(EguiPlugin);
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = world_inspector_ui.into_config();
+        let mut system = world_inspector_ui.run_if(|| true);
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
-        app.add_system(system);
+        app.add_systems(Update, system);
     }
 }
 
@@ -81,7 +82,7 @@ fn world_inspector_ui(world: &mut World) {
 
     let Ok(egui_context) = egui_context else {return;};
     let mut egui_context = egui_context.clone();
-    
+
     egui::Window::new("World Inspector")
         .default_size(DEFAULT_SIZE)
         .show(egui_context.get_mut(), |ui| {
@@ -153,18 +154,18 @@ impl<T> ResourceInspectorPlugin<T> {
 impl<T: Resource + Reflect> Plugin for ResourceInspectorPlugin<T> {
     fn build(&self, app: &mut bevy_app::App) {
         if !app.is_plugin_added::<DefaultInspectorConfigPlugin>() {
-            app.add_plugin(DefaultInspectorConfigPlugin);
+            app.add_plugins(DefaultInspectorConfigPlugin);
         }
         if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugin(EguiPlugin);
+            app.add_plugins(EguiPlugin);
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = inspector_ui::<T>.into_config();
+        let mut system = inspector_ui::<T>.run_if(|| true);
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
-        app.add_system(system);
+        app.add_systems(Update, system);
     }
 }
 
@@ -244,18 +245,18 @@ impl<T> StateInspectorPlugin<T> {
 impl<T: States + Reflect> Plugin for StateInspectorPlugin<T> {
     fn build(&self, app: &mut bevy_app::App) {
         if !app.is_plugin_added::<DefaultInspectorConfigPlugin>() {
-            app.add_plugin(DefaultInspectorConfigPlugin);
+            app.add_plugins(DefaultInspectorConfigPlugin);
         }
         if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugin(EguiPlugin);
+            app.add_plugins(EguiPlugin);
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = state_ui::<T>.into_config();
+        let mut system = state_ui::<T>.run_if(|| true);
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
-        app.add_system(system);
+        app.add_systems(Update, system);
     }
 }
 
@@ -324,18 +325,18 @@ impl<A> AssetInspectorPlugin<A> {
 impl<A: Asset + Reflect> Plugin for AssetInspectorPlugin<A> {
     fn build(&self, app: &mut bevy_app::App) {
         if !app.is_plugin_added::<DefaultInspectorConfigPlugin>() {
-            app.add_plugin(DefaultInspectorConfigPlugin);
+            app.add_plugins(DefaultInspectorConfigPlugin);
         }
         if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugin(EguiPlugin);
+            app.add_plugins(EguiPlugin);
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = asset_inspector_ui::<A>.into_config();
+        let mut system = asset_inspector_ui::<A>.run_if(|| true);
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
-        app.add_system(system);
+        app.add_systems(Update, system);
     }
 }
 
@@ -346,7 +347,7 @@ fn asset_inspector_ui<A: Asset + Reflect>(world: &mut World) {
 
     let Ok(egui_context) = egui_context else {return;};
     let mut egui_context = egui_context.clone();
-        
+
     egui::Window::new(pretty_type_name::<A>())
         .default_size(DEFAULT_SIZE)
         .show(egui_context.get_mut(), |ui| {
@@ -402,18 +403,19 @@ where
 {
     fn build(&self, app: &mut bevy_app::App) {
         if !app.is_plugin_added::<DefaultInspectorConfigPlugin>() {
-            app.add_plugin(DefaultInspectorConfigPlugin);
+            app.add_plugins(DefaultInspectorConfigPlugin);
         }
         if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugin(EguiPlugin);
+            app.add_plugins(EguiPlugin);
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = IntoSystemConfig::into_config(entity_query_ui::<F>);
+		entity_query_ui::<F>.before(bevy_render::RenderSet::Cleanup);
+        let mut system = entity_query_ui::<F>.run_if(|| true);
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
-        app.add_system(system);
+        app.add_systems(Update, system);
     }
 }
 
@@ -424,7 +426,7 @@ fn entity_query_ui<F: ReadOnlyWorldQuery>(world: &mut World) {
 
     let Ok(egui_context) = egui_context else {return;};
     let mut egui_context = egui_context.clone();
-    
+
     egui::Window::new(pretty_type_name::<F>())
         .default_size(DEFAULT_SIZE)
         .show(egui_context.get_mut(), |ui| {
@@ -468,32 +470,32 @@ impl System for BoxedConditionHelper {
         self.0.is_exclusive()
     }
 
-    unsafe fn run_unsafe(&mut self, input: Self::In, world: &World) -> Self::Out {
+    unsafe fn run_unsafe(&mut self, input: Self::In, world: UnsafeWorldCell) -> Self::Out {
         // SAFETY: same as this method
         unsafe { self.0.run_unsafe(input, world) }
     }
 
-    fn apply_buffers(&mut self, world: &mut World) {
-        self.0.apply_buffers(world)
+    fn apply_deferred(&mut self, world: &mut World) {
+        self.0.apply_deferred(world)
     }
 
     fn initialize(&mut self, _world: &mut World) {
         self.0.initialize(_world)
     }
 
-    fn update_archetype_component_access(&mut self, world: &World) {
+    fn update_archetype_component_access(&mut self, world: UnsafeWorldCell) {
         self.0.update_archetype_component_access(world)
     }
 
-    fn check_change_tick(&mut self, change_tick: u32) {
+    fn check_change_tick(&mut self, change_tick: Tick) {
         self.0.check_change_tick(change_tick)
     }
 
-    fn get_last_change_tick(&self) -> u32 {
-        self.0.get_last_change_tick()
+    fn get_last_run(&self) -> Tick {
+        self.0.get_last_run()
     }
 
-    fn set_last_change_tick(&mut self, last_change_tick: u32) {
-        self.0.set_last_change_tick(last_change_tick)
+    fn set_last_run(&mut self, last_run: Tick) {
+        self.0.set_last_run(last_run)
     }
 }
