@@ -410,7 +410,7 @@ where
         }
 
         let condition = self.condition.lock().unwrap().take();
-		entity_query_ui::<F>.before(bevy_render::RenderSet::Cleanup);
+        entity_query_ui::<F>.before(bevy_render::RenderSet::Cleanup);
         let mut system = entity_query_ui::<F>.run_if(|| true);
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
