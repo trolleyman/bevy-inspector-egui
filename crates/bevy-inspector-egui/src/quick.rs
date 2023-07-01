@@ -67,7 +67,7 @@ impl Plugin for WorldInspectorPlugin {
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = world_inspector_ui.run_if(|| true);
+        let mut system = world_inspector_ui.into_configs();
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
@@ -161,7 +161,7 @@ impl<T: Resource + Reflect> Plugin for ResourceInspectorPlugin<T> {
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = inspector_ui::<T>.run_if(|| true);
+        let mut system = inspector_ui::<T>.into_configs();
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
@@ -252,7 +252,7 @@ impl<T: States + Reflect> Plugin for StateInspectorPlugin<T> {
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = state_ui::<T>.run_if(|| true);
+        let mut system = state_ui::<T>.into_configs();
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
@@ -332,7 +332,7 @@ impl<A: Asset + Reflect> Plugin for AssetInspectorPlugin<A> {
         }
 
         let condition = self.condition.lock().unwrap().take();
-        let mut system = asset_inspector_ui::<A>.run_if(|| true);
+        let mut system = asset_inspector_ui::<A>.into_configs();
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
@@ -411,7 +411,7 @@ where
 
         let condition = self.condition.lock().unwrap().take();
         entity_query_ui::<F>.before(bevy_render::RenderSet::Cleanup);
-        let mut system = entity_query_ui::<F>.run_if(|| true);
+        let mut system = entity_query_ui::<F>.into_configs();
         if let Some(condition) = condition {
             system = system.run_if(BoxedConditionHelper(condition));
         }
