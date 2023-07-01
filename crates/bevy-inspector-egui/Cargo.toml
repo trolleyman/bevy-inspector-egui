@@ -20,7 +20,7 @@ default = ["bevy_pbr"]
 highlight_changes = []
 
 [dependencies]
-bevy-inspector-egui-derive = { version = "0.18.0", path = "../bevy-inspector-egui-derive" }
+bevy-inspector-egui-derive = { version = "0.19.0-dev", path = "../bevy-inspector-egui-derive" }
 bevy_app = { version = "0.11.0-dev" }
 bevy_asset = { version = "0.11.0-dev" }
 bevy_core = { version = "0.11.0-dev" }
